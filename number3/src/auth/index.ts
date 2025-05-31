@@ -7,32 +7,6 @@ import {
 import NextAuth, { type DefaultSession } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 
-// Add retry logic with exponential backoff
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-const retryWithBackoff = async <T>(
-  fn: () => Promise<T>,
-  maxRetries: number = 3,
-  baseDelay: number = 1000
-): Promise<T> => {
-  let lastError: Error;
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error as Error;
-      if (error instanceof Error && error.message.includes('429')) {
-        const delay = baseDelay * Math.pow(2, i);
-        console.log(`Rate limited, retrying in ${delay}ms...`);
-        await sleep(delay);
-        continue;
-      }
-      throw error;
-    }
-  }
-  throw lastError!;
-};
-
 declare module 'next-auth' {
   interface User {
     walletAddress: string;
@@ -73,60 +47,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         signedNonce: string;
         finalPayloadJson: string;
       }) => {
-        try {
-          const expectedSignedNonce = hashNonce({ nonce });
+        const expectedSignedNonce = hashNonce({ nonce });
 
-          if (signedNonce !== expectedSignedNonce) {
-            console.error('Invalid signed nonce');
-            return null;
-          }
-
-          const finalPayload: MiniAppWalletAuthSuccessPayload =
-            JSON.parse(finalPayloadJson);
-
-          // Add retry logic for SIWE verification
-          const result = await retryWithBackoff(async () => {
-            try {
-              // Use a different RPC endpoint for verification
-              const customRpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://eth-mainnet.g.alchemy.com/v2/your-api-key';
-              return await verifySiweMessage(finalPayload, nonce, customRpcUrl);
-            } catch (error) {
-              console.error('SIWE verification error:', error);
-              throw error;
-            }
-          });
-
-          if (!result.isValid || !result.siweMessageData.address) {
-            console.error('Invalid final payload:', {
-              isValid: result.isValid,
-              address: result.siweMessageData.address,
-            });
-            return null;
-          }
-
-          // Add retry logic for user info fetch
-          const userInfo = await retryWithBackoff(async () => {
-            try {
-              return await MiniKit.getUserInfo(finalPayload.address);
-            } catch (error) {
-              console.error('Error fetching user info:', error);
-              // Return basic user info if fetch fails
-              return {
-                walletAddress: finalPayload.address,
-                username: 'Anonymous',
-                profilePictureUrl: '',
-              };
-            }
-          });
-
-          return {
-            id: finalPayload.address,
-            ...userInfo,
-          };
-        } catch (error) {
-          console.error('Auth error:', error);
+        if (signedNonce !== expectedSignedNonce) {
+          console.log('Invalid signed nonce');
           return null;
         }
+
+        const finalPayload: MiniAppWalletAuthSuccessPayload =
+          JSON.parse(finalPayloadJson);
+        const result = await verifySiweMessage(finalPayload, nonce);
+
+        if (!result.isValid || !result.siweMessageData.address) {
+          console.log('Invalid final payload');
+          return null;
+        }
+        // Optionally, fetch the user info from your own database
+        const userInfo = await MiniKit.getUserInfo(finalPayload.address);
+
+        return {
+          id: finalPayload.address,
+          ...userInfo,
+        };
       },
     }),
   ],
