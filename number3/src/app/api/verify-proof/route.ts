@@ -19,7 +19,7 @@ interface IRequestPayload {
  */
 export async function POST(req: NextRequest) {
   const { payload, action, signal } = (await req.json()) as IRequestPayload;
-  const app_id = process.env.NEXT_PUBLIC_APP_ID as `app_${string}`;
+  const app_id = process.env.APP_ID as `app_${string}`;
 
   console.log('Verification attempt:', {
     action,

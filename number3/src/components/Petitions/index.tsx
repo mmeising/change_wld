@@ -19,7 +19,37 @@ export const Petitions = () => {
   const [newPetition, setNewPetition] = useState({ title: '', description: '' });
   const [verificationState, setVerificationState] = useState<'pending' | 'success' | 'failed' | undefined>(undefined);
   const { isInstalled } = useMiniKit();
-  const [isCreatingAction, setIsCreatingAction] = useState(false);
+
+  // Create a new action
+  const handleCreateAction = useCallback(async () => {
+    try {
+      const response = await fetch('/api/actions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'sign-petition-123',
+          name: 'Sign Petition 123',
+          description: 'Sign a specific petition with ID 123',
+          max_verifications: 1,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        console.log('Action created successfully:', data);
+        alert('Action created successfully!');
+      } else {
+        console.error('Failed to create action:', data);
+        alert(`Failed to create action: ${data.detail}`);
+      }
+    } catch (error) {
+      console.error('Error creating action:', error);
+      alert('Error creating action. Check console for details.');
+    }
+  }, []);
 
   // Fetch petitions
   const fetchPetitions = useCallback(async () => {
@@ -170,13 +200,22 @@ export const Petitions = () => {
     <div className="grid w-full gap-4">
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-semibold">Petitions</h2>
-        <Button
-          onClick={() => setIsCreating(true)}
-          variant="primary"
-          size="sm"
-        >
-          Create New Petition
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleCreateAction}
+            variant="secondary"
+            size="sm"
+          >
+            Create Action
+          </Button>
+          <Button
+            onClick={() => setIsCreating(true)}
+            variant="primary"
+            size="sm"
+          >
+            Create New Petition
+          </Button>
+        </div>
       </div>
 
       {isCreating && (
