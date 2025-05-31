@@ -20,8 +20,8 @@ export const Petitions = () => {
   const [verificationState, setVerificationState] = useState<'pending' | 'success' | 'failed' | undefined>(undefined);
   const { isInstalled } = useMiniKit();
 
-  // Create a new action
-  const handleCreateAction = useCallback(async () => {
+  // Create a new action for a specific petition
+  const createPetitionAction = useCallback(async (petitionId: string) => {
     try {
       const response = await fetch('/api/actions', {
         method: 'POST',
@@ -30,24 +30,22 @@ export const Petitions = () => {
           'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_KEY}`,
         },
         body: JSON.stringify({
-          action: 'sign-petition-124',
-          name: 'Sign Petition 124',
-          description: 'Sign a specific petition with ID 124',
+          action: `sign-petition-${petitionId}`,
+          name: `Sign Petition ${petitionId}`,
+          description: `Sign the petition with ID ${petitionId}`,
           max_verifications: 1,
         }),
       });
 
       const data = await response.json();
-      if (response.ok) {
-        console.log('Action created successfully:', data);
-        alert('Action created successfully!');
-      } else {
-        console.error('Failed to create action:', data);
-        alert(`Failed to create action: ${data.detail}`);
+      if (!response.ok) {
+        console.error('Failed to create petition action:', data);
+        throw new Error(data.detail || 'Failed to create petition action');
       }
+      return data;
     } catch (error) {
-      console.error('Error creating action:', error);
-      alert('Error creating action. Check console for details.');
+      console.error('Error creating petition action:', error);
+      //throw error;
     }
   }, []);
 
@@ -113,6 +111,10 @@ export const Petitions = () => {
         });
         
         if (response.ok) {
+          const petitionData = await response.json();
+          // Create a new action for this petition
+          await createPetitionAction(petitionData.id);
+          
           setNewPetition({ title: '', description: '' });
           setIsCreating(false);
           fetchPetitions();
@@ -130,7 +132,7 @@ export const Petitions = () => {
       console.error('Error creating petition:', error);
       setVerificationState('failed');
     }
-  }, [isInstalled, newPetition, fetchPetitions]);
+  }, [isInstalled, newPetition, fetchPetitions, createPetitionAction]);
 
   // Handle petition signing
   const handleSignPetition = useCallback(async (petitionId: string) => {
@@ -138,9 +140,9 @@ export const Petitions = () => {
 
     setVerificationState('pending');
     try {
-      // Verify user with World ID
+      // Verify user with World ID using the petition-specific action
       const result = await MiniKit.commandsAsync.verify({
-        action: 'sign-petition',
+        action: `sign-petition-${petitionId}`,
         verification_level: VerificationLevel.Orb,
       });
 
@@ -162,7 +164,7 @@ export const Petitions = () => {
         },
         body: JSON.stringify({
           payload: result.finalPayload,
-          action: 'sign-petition',
+          action: `sign-petition-${petitionId}`,
         }),
       });
 
@@ -209,13 +211,6 @@ export const Petitions = () => {
             size="sm"
           >
             Debug Data
-          </Button>
-          <Button
-            onClick={handleCreateAction}
-            variant="secondary"
-            size="sm"
-          >
-            Create Action
           </Button>
           <Button
             onClick={() => setIsCreating(true)}
