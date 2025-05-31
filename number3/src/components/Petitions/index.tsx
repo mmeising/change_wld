@@ -202,6 +202,15 @@ export const Petitions = () => {
         <h2 className="text-lg font-semibold">Petitions</h2>
         <div className="flex gap-2">
           <Button
+            onClick={() => {
+              console.log('Current Petitions Data:', JSON.stringify(petitions, null, 2));
+            }}
+            variant="secondary"
+            size="sm"
+          >
+            Debug Data
+          </Button>
+          <Button
             onClick={handleCreateAction}
             variant="secondary"
             size="sm"

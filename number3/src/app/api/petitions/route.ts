@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createHmac } from 'crypto';
 
 // In-memory storage for petitions (replace with database in production)
 let petitions: Array<{
@@ -9,6 +10,16 @@ let petitions: Array<{
   createdAt: string;
 }> = [];
 
+// Keep track of the current index
+let currentIndex = 0;
+
+// Function to generate a hashed ID
+function generateHashedId(index: number): string {
+  const hmac = createHmac('sha256', process.env.HMAC_SECRET_KEY || 'default-secret');
+  hmac.update(index.toString());
+  return hmac.digest('hex');
+}
+
 export async function GET() {
   return NextResponse.json({ petitions });
 }
@@ -17,7 +28,7 @@ export async function POST(req: NextRequest) {
   const { title, description } = await req.json();
   
   const newPetition = {
-    id: Math.random().toString(36).substring(7),
+    id: generateHashedId(currentIndex++),
     title,
     description,
     signatureCount: 0,
