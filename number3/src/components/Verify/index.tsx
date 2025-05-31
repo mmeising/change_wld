@@ -15,38 +15,62 @@ export const Verify = () => {
   >(undefined);
 
   const [whichVerification, setWhichVerification] = useState<VerificationLevel>(
-    VerificationLevel.Device,
+    VerificationLevel.Orb, // Default to Orb verification for stronger security
   );
 
   const onClickVerify = async (verificationLevel: VerificationLevel) => {
     setButtonState('pending');
     setWhichVerification(verificationLevel);
-    const result = await MiniKit.commandsAsync.verify({
-      action: 'test-action', // Make sure to create this in the developer portal -> incognito actions
-      verification_level: verificationLevel,
-    });
-    console.log(result.finalPayload);
-    // Verify the proof
-    const response = await fetch('/api/verify-proof', {
-      method: 'POST',
-      body: JSON.stringify({
-        payload: result.finalPayload,
-        action: 'test-action',
-      }),
-    });
+    try {
+      const result = await MiniKit.commandsAsync.verify({
+        action: 'create-petition',
+        verification_level: verificationLevel,
+      });
+      console.log('Verification result:', result.finalPayload);
 
-    const data = await response.json();
-    if (data.verifyRes.success) {
-      setButtonState('success');
-      // Normally you'd do something here since the user is verified
-      // Here we'll just do nothing
-    } else {
+      if (result.finalPayload.status === 'error') {
+        console.error('Verification failed - client error:', {
+          error: result.finalPayload,
+          verification_level: verificationLevel,
+        });
+        setButtonState('failed');
+        setTimeout(() => setButtonState(undefined), 2000);
+        return;
+      }
+
+      // Verify the proof
+      const response = await fetch('/api/verify-proof', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          payload: result.finalPayload,
+          action: 'create-petition',
+        }),
+      });
+
+      const data = await response.json();
+      if (data.verifyRes.success) {
+        console.log('Verification successful:', {
+          verification_level: verificationLevel,
+        });
+        setButtonState('success');
+      } else {
+        console.error('Verification failed - server error:', {
+          error: data.verifyRes,
+          verification_level: verificationLevel,
+        });
+        setButtonState('failed');
+        setTimeout(() => setButtonState(undefined), 2000);
+      }
+    } catch (error) {
+      console.error('Verification error - unexpected:', {
+        error,
+        verification_level: verificationLevel,
+      });
       setButtonState('failed');
-
-      // Reset the button state after 3 seconds
-      setTimeout(() => {
-        setButtonState(undefined);
-      }, 2000);
+      setTimeout(() => setButtonState(undefined), 2000);
     }
   };
 
@@ -60,14 +84,14 @@ export const Verify = () => {
           success: 'Verified',
         }}
         state={
-          whichVerification === VerificationLevel.Device
+          whichVerification === VerificationLevel.Orb
             ? buttonState
             : undefined
         }
         className="w-full"
       >
         <Button
-          onClick={() => onClickVerify(VerificationLevel.Device)}
+          onClick={() => onClickVerify(VerificationLevel.Orb)}
           disabled={buttonState === 'pending'}
           size="lg"
           variant="tertiary"
