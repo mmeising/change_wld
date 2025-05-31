@@ -52,8 +52,10 @@ export const Petitions = () => {
   // Fetch petitions
   const fetchPetitions = useCallback(async () => {
     try {
+      console.log('Fetching petitions...');
       const response = await fetch('/api/petitions');
       const data = await response.json();
+      console.log('Fetched petitions:', data);
       setPetitions(data.petitions);
     } catch (error) {
       console.error('Failed to fetch petitions:', error);
@@ -112,11 +114,13 @@ export const Petitions = () => {
         
         if (response.ok) {
           const petitionData = await response.json();
+          console.log('Created petition data:', petitionData);
           // Create a new action for this petition
           await createPetitionAction(petitionData.id);
           
           setNewPetition({ title: '', description: '' });
           setIsCreating(false);
+          console.log('Fetching petitions after creation...');
           fetchPetitions();
         } else {
           console.error('Failed to create petition:', await response.text());
