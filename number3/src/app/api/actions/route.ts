@@ -3,13 +3,13 @@ import * as yup from 'yup';
 
 const createActionBodySchema = yup.object({
   action: yup.string().strict().required(),
-  name: yup.string().optional().default(''),
-  description: yup.string().optional().default(''),
-  max_verifications: yup.number().optional().default(1),
+  name: yup.string().required(),
+  description: yup.string().required(),
+  max_verifications: yup.number().required(),
 });
 
 export async function POST(req: NextRequest) {
-  const api_key = "api_a2V5X2Q0N2ZmYWUzNGFiZTE4MGI5N2Y1OWZjYjlkY2VmNGE0OnNrX2IwNTQwMjRmM2RkZDAzYWMwNWI0MjgyZDFkMDZiZGMxMDY3N2MxZWEyODc4ZmJkNQ"//req.headers.get('authorization')?.split(' ')[1];
+  const api_key = process.env.WORLD_ID_API_KEY;
 
   if (!api_key) {
     return NextResponse.json(
@@ -44,9 +44,11 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${api_key}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         action,
+        name,
         description,
         max_verifications,
       }),

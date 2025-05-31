@@ -30,9 +30,9 @@ export const Petitions = () => {
           'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_KEY}`,
         },
         body: JSON.stringify({
-          action: 'sign-petition-123',
-          name: 'Sign Petition 123',
-          description: 'Sign a specific petition with ID 123',
+          action: 'sign-petition-124',
+          name: 'Sign Petition 124',
+          description: 'Sign a specific petition with ID 124',
           max_verifications: 1,
         }),
       });
