@@ -31,3 +31,8 @@ This starter kit uses [Mini Apps UI Kit](https://github.com/worldcoin/mini-apps-
 ## Contributing
 
 This template was made with help from the amazing [supercorp-ai](https://github.com/supercorp-ai) team.
+
+
+
+## Lookout
+From local file for POC to fully on-chain saves of petitions and fetching amount of uses of actions instead of just incrementing locally.

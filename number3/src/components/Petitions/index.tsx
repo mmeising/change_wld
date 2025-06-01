@@ -207,15 +207,18 @@ export const Petitions = () => {
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-semibold">Petitions</h2>
         <div className="flex gap-2">
+          {/* Debug button - commented out
           <Button
             onClick={() => {
               console.log('Current Petitions Data:', JSON.stringify(petitions, null, 2));
             }}
             variant="secondary"
             size="sm"
+            className="text-white hover:text-white"
           >
             Debug Data
           </Button>
+          */}
           <Button
             onClick={() => setIsCreating(true)}
             variant="primary"
@@ -247,6 +250,7 @@ export const Petitions = () => {
               onClick={handleCreatePetition}
               variant="primary"
               disabled={!newPetition.title || !newPetition.description}
+              className="text-black hover:text-black"
             >
               Create Petition
             </Button>
@@ -256,6 +260,7 @@ export const Petitions = () => {
                 setNewPetition({ title: '', description: '' });
               }}
               variant="secondary"
+              className="text-white hover:text-white"
             >
               Cancel
             </Button>
@@ -278,12 +283,13 @@ export const Petitions = () => {
           <p className="text-gray-600 mt-2">{petition.description}</p>
           <div className="flex justify-between items-center mt-4">
             <span className="text-sm text-gray-500">
-              {petition.signatureCount} signatures
+              {petition.signatureCount} {petition.signatureCount === 1 ? 'signature' : 'signatures'}
             </span>
             <Button
               onClick={() => handleSignPetition(petition.id)}
               variant="secondary"
               size="sm"
+              className="text-white hover:text-white"
             >
               Sign Petition
             </Button>
